@@ -28,3 +28,12 @@ class TestHelpers(unittest.TestCase):
     @raises(QueryTooLongException)
     def test_cosine_sim_x_z(self):
         helpers.cosine_similarity(vectors['x'], vectors['z'])
+
+
+    def test_split_dict(self):
+        dictionary = {1: 1, 2: 2, 3: 3, 4: 4}
+        dictionary_as_chunks = [{1: 1, 2: 2},
+                                {3: 3, 4: 4}]
+
+        output = helpers.split_dict(dictionary, 2)
+        self.assertListEqual(dictionary_as_chunks, output)

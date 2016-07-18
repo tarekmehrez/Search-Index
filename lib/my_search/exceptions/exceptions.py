@@ -14,6 +14,13 @@ class FormatNotSupportedException(Exception):
 class QueryTooLongException(Exception):
 
     """
-    Format not supported exception while doing io operations.
+    In case Query is longer than the article, while doing tfidf sim measure.
+    """
+    pass
+
+
+class IndexNotLoadedException(Exception):
+    """
+    If user is searching before creating/loading an index.
     """
     pass

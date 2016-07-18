@@ -1,0 +1,67 @@
+#!/usr/bin/env python
+import argparse
+import time
+
+from my_search.core import SearchEngine
+
+engine = SearchEngine()
+parser = argparse.ArgumentParser()
+
+parser.add_argument('--build_index',
+                    action='store_true',
+                    dest='build_index',
+                    help='Build Index')
+
+parser.add_argument('--input',
+                    action='store',
+                    dest='input',
+                    help='Input')
+
+parser.add_argument('--output',
+                    action='store',
+                    dest='output',
+                    help='Output')
+
+parser.add_argument('--search',
+                    action='store_true',
+                    dest='search',
+                    help='Search')
+
+
+parser.add_argument('--num_results',
+                    action='store',
+                    dest='num_results',
+                    type=int,
+                    help='Number of search results')
+
+
+def search(num_results):
+    try:
+        while(True):
+            query = raw_input('search> ')
+            if len(query) == 0:
+                continue
+
+            before = time.time()
+            results = engine.search(str(query), num_results)
+            after = time.time()
+            print 'time taken: %fs' % (after - before)
+            for result in results:
+                print result
+    except KeyboardInterrupt:
+        print 'interrupted, closing now!'
+
+def parse_args():
+    args = parser.parse_args()
+    if args.build_index:
+        engine.build_index(args.input, args.output)
+    else:
+        engine.load_index(args.input)
+        search(args.num_results)
+
+def main():
+    parse_args()
+
+
+if __name__ == '__main__':
+    main()

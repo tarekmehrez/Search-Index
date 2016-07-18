@@ -12,6 +12,7 @@ SUPPORTED_READ_EXTENSIONS = ['.tsv', '.pkl']
 SUPPORTED_WRITE_EXTENSIONS = ['.pkl']
 
 # TODO: handle encoding
+# TODO: optimize pkl dumping, since marshal is not secure
 
 
 def exists(file_path):
@@ -94,6 +95,26 @@ def write(content, file_path):
         return _write_pkl(content, file_path)
 
 
+def write_batch(files, dir_path, extension):
+    """
+    Write several files to a given dir.
+
+    Args:
+        files (dict{str:obj}): file_name, and the content
+        dir_path (str)
+        extenstion (str)
+    """
+    if extension not in SUPPORTED_WRITE_EXTENSIONS:
+        raise FormatNotSupportedException(
+            'Cant write file with %s format' % extension)
+
+    os.makedirs(dir_path)
+
+    for file_name, content in files.iteritems():
+        abs_path = '%s/%s%s' % (dir_path, file_name, extension)
+        write(content, abs_path)
+
+
 def _write_pkl(content, file_path):
     """
     Write content to a pkl format.
@@ -103,4 +124,4 @@ def _write_pkl(content, file_path):
         file_path (str): path to the output file
     """
     with open(file_path, 'wb') as f:
-        cPickle.dump(content, f, protocol=cPickle.HIGHEST_PROTOCOL)
+        cPickle.dump(content, f, 2)

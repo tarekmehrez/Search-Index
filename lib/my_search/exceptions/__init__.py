@@ -1,2 +1,3 @@
 from exceptions import FormatNotSupportedException
 from exceptions import QueryTooLongException
+from exceptions import IndexNotLoadedException

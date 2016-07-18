@@ -34,6 +34,10 @@ def cosine_similarity(query, article):
     for token in query:
         dot_product += query[token] * article[token]
 
+    # special case: if an item occurrs in all articles
+    if query_magnitude == 0 or article_magnitude == 0:
+        return 0.0
+
     final_product = dot_product / (query_magnitude * article_magnitude)
     rounded_value = round(final_product, DECIMAL_PLACES)
 
@@ -51,3 +55,30 @@ def _calculate_magnitude(vector):
     """
     magnitude = [pow(float(value), 2) for value in vector]
     return sqrt(float(sum(magnitude)))
+
+
+def split_dict(dictionary, chunks=4):
+    """
+    Split dictionary into smaller chunks.
+
+    Args:
+        dictionary (dict)
+        chunks [OPTIONAL] (int)
+    Returns
+        list[dict]: chunks
+    """
+    result = []
+
+    split_size = len(dictionary) // chunks
+
+    if split_size < 2:
+        return [dictionary]
+
+    keys_as_chunks = [dictionary.keys()[i:i + split_size] for i in xrange(0, len(dictionary.keys()), split_size)]
+
+    for chunk in keys_as_chunks:
+
+        split = {key: dictionary[key] for key in chunk}
+        result.append(split)
+
+    return result

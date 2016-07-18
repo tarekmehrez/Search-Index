@@ -1,0 +1,151 @@
+* Brief Description:
+
+** The solution is based on two main parts
+
+*** index building
+This creates a new Index instnace that takes in the tsv file, creates index accordingly
+Since building the index takes some time (around a minute for simplewiki.tsv), it made more sense
+to run it as a first step in the background
+
+*** Search:
+Search is done by loading index once then the user passes search queries
+
+
+** Search is performed on two main steps
+*** Creating inverted index (or postings list)
+*** Ranking returned results using tfidf
+
+** Describing the package
+*** core module: contains the main modules required to build the index and perform search
+*** util module: all utility functions and scripts used as helper functions
+*** exceptions module: package-specific exceptions
+*** The SearchEngine class is the main module for running the entire package as shown in bin/run_search
+
+** Testing:
+*** Testing using nosetests -w tests
+*** Tests have been written trying to reach 100% coverage
+*** Toy data is used to make sure basic funcitonality is working
+*** Tests do not run on windows for specific permission issues with the tempfile module (however tested on linux)
+
+
+** Running the package
+*** first of all you need to build the package. run in the root directory
+ python setup.py install
+*** run the script in the bin directory bin/run_search as follows
+to build the index:
+ python bin/run_search --build_index --input <path_to_tsv_file> --output <path_to_index_dir>
+
+to perform searchin:
+ python bin/run_search --search --input <path_to_index_dir> --num_results <number of results to be returned>
+
+*** for the search command, the user is prompted to enter the query, then goes in a loop until interrupted
+*** for time constraints, wrong user input wasn't handles in the cmd args
+
+
+** Quick package flow (all handled within SearchEngine):
+*** Read tsv file using io module
+*** create index instance (containing key dicts: postings, artilces and token_idf)
+*** write to output file
+*** load index
+*** for each query: tokenize, get postings intersection (search results) then rank (using tfidf)
+
+__________________________________________________________________________
+
+* Performance:
+
+NOTE: for more info about runtime see last section: log snapshots:
+
+** Complexity:
+*** worst case run time complexity for building the index is
+O(num of articles * number of tokens in the longest article),
+which occurrs while building the postings list
+
+*** worst case run time complexity for searching the index is
+O(nlog(n)) where n = longest number of search results.
+Since cosine similarities are then sorted to be returned as search results
+
+
+** Performance issues:
+*** the preferred approach was having several lookup tables (dictionaries) for postings, articles (including id, title, frequencies and tfidf values) and token idf values (for on the fly calculation of tfidf for new search queries)
+
+*** due to memory issues, the article dict had to be split into several chunks, and written separately. in case tsv file gets larger, number of chunks must be more than the current one. This is due to the fact that cPickle looks for cycles in dictionaries, and ends up taking A LOT of memory.
+
+*** also the entire index is being loaded in memory while searching, in case tsv file gets bigger, this will also be an issue
+
+*** all articles' titles and ids are being replicated in the new dictionary (to be displayed back to the user as results).
+
+** io is a bit slow, pickle was used to simplicity. However json is preferred for potential readability issues from other languages.
+
+** there are a lot of debug logging messages, that's to keep track of time taken to perform operations
+
+__________________________________________________________________________
+
+* Potential improvements (in order of priority):
+
+** Correctness:
+*** Test ranking, that's not done extensively for time constraints
+*** Exhaustive testing of search results and ranking, instead of basic toy data
+*** handle encoding in io module (make sure its utf-8 for example)
+*** handle wrong cmd user input in bin/run_search
+*** better description of args and help messages in cmd parser
+
+
+** Performance:
+*** since building the index is done typicall offline, performance shouldnt be a major problem (if its acceptable)
+*** since loading index in memory should be done once on runtime, also if accceptable performance is fine
+*** the crucial part is search performance, which is currently acceptable
+*** use a proper db design to avoid the whole file io issue
+*** use caching to avoid loading the entire thing in memory
+*** use a Trie to store vocab
+*** calculate entire tfidf vector per article on the fly (during search and not building the index), to save memory. This must be really efficient to avoid latency while searching
+*** use scipy to calculate cosine similarity
+*** use numpy sparse matrices to store term frequencies
+*** better analysis (statistics) on how the package is performing on:
+**** very long queries
+**** query intersections that return most articles
+
+** Nice to haves:
+*** Stop word removal before indexing
+*** lemmatization before indexing
+*** maybe use nltk for basic nlp preprocessing
+*** using LSA or word2vec for better vector representation of articles (better ranking?)
+*** spelling correction (maybe by edit distance) to give the user a 'did you mean' suggestion
+
+__________________________________________________________________________
+
+* Log snapshots:
+
+** building index
+command: cd bin/ & python run_search --build_index --input ../data/simplewiki.tsv --output ../big-index
+output:
+2016-07-18 18:43:49,517 : INFO : Creating index from knowledge base ../data/simplewiki.tsv
+2016-07-18 18:43:50,448 : DEBUG : Creating postings
+2016-07-18 18:44:14,158 : DEBUG : Calculating tfidf
+2016-07-18 18:44:25,213 : DEBUG : Writing index
+2016-07-18 18:45:01,079 : DEBUG : Done writing index
+
+** searching
+command: cd bin/ & python run_search --search --input ../big-index --num_results 5
+output:
+2016-07-18 18:45:59,388 : DEBUG : Loading index from ../big-index
+2016-07-18 18:46:22,911 : DEBUG : Done loading index
+search> soundcloud
+time taken: 0.000770s
+('394519', 'The Phoenix (song)')
+search> france
+time taken: 0.379854s
+('291', 'France')
+('172953', 'France national football team')
+('166189', 'Battle of France')
+('91219', "Hundred Years' War")
+('11036', 'Claude of France')
+search> democracy
+time taken: 0.049330s
+('40651', 'Direct democracy')
+('3195', 'Democracy')
+('7223', 'Independence and Democracy')
+('8158', 'Democracy Now!')
+('100455', 'Sortition')
+search> ^Cinterrupted, closing now!
+
+__________________________________________________________________________
