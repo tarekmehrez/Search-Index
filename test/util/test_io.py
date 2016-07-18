@@ -1,10 +1,10 @@
 import unittest
 import cPickle
 import tempfile
-from nose.tools import *
+from nose.tools import raises
 
-from my_search.exceptions import FormatNotSupportedException
 from my_search.util import io
+from my_search.exceptions import FormatNotSupportedException
 
 
 CONTENT = ('123\tEU\tSo portugal won the EURO\n'
@@ -39,7 +39,7 @@ class TestIO(unittest.TestCase):
     @raises(FormatNotSupportedException)
     def test_read_tsv(self):
         temp_file = tempfile.NamedTemporaryFile(suffix='.txt', delete=True)
-        output = io.read(temp_file.name)
+        io.read(temp_file.name)
 
     def test_write_to_pkl(self):
         temp_file = tempfile.NamedTemporaryFile(suffix='.pkl', delete=True)
@@ -52,4 +52,4 @@ class TestIO(unittest.TestCase):
     @raises(FormatNotSupportedException)
     def test_read_tsv(self):
         temp_file = tempfile.NamedTemporaryFile(suffix='.txt', delete=True)
-        output = io.write(CONTENT, temp_file.name)
+        io.write(CONTENT, temp_file.name)
