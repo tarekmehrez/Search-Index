@@ -16,13 +16,24 @@ def cosine_similarity(query, article)
     """
     dot_product = 0.0
 
-    query_magnitude = [pow(float(value), 2) for value in query.values()]
-    article_magnitude = [pow(float(value), 2) for value in article.values()]
+    query_magnitude = _calculate_magnitude(query.values())
+    article_magnitude = _calculate_magnitude(article.values())
 
-    query_magnitude = float(sum(query_magnitude))
-    article_magnitude = float(sum(article_magnitude))
-
+    # assuming query is always smaller than article
     for token in query:
         dot_product += query[token] * article[token]
 
     return dot_product / query_magnitude * article_magnitude
+
+
+def _calculate_magnitude(vector):
+    """
+    Calculate a magnitude of a vector.
+
+    Args:
+        vector (list[int])
+    Retirns:
+        float: magnitude
+    """
+    magnitude = [pow(float(value), 2) for value in vector]
+    return float(sum(magnitude))
